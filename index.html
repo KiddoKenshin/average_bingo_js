@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	
+	<title>bingo logic</title>
+</head>
+<body>
+<style type="text/css">
+
+</style>
+<script type="text/javascript" charset="UTF-8">
+var verbose = false;
+function cLog(message, force) {
+	if (verbose || force === true) {
+		console.log(message);
+	}
+}
+
+var freeSpace = true;
+var sheetSize = 5; // 5 x 5, Odd numbers, 3 onwards
+var maxBingoInt = 100; // 1 ~ max
+var contestants = 1000; // How many players
+var maxBingoHit = 500;
+var redrawCount = 1000;
+
+var bingoSheets = [];
+var chosenNumbers = [];
+var bingoedCount = 0;
+
+var totalDrawResults = [];
+
+if (maxBingoHit < 1 || maxBingoHit > contestants) {
+	alert('Hit count not properly set!');
+	throw Error('Hit count not properly set!');
+}
+
+if (sheetSize % 2 == 0) {
+	alert('Sheet size is not an odd value!');
+	throw Error('Sheet size is not an odd value!');
+}
+
+function getRandom(max) {
+	// 0 ~ (max - 1)
+	return Math.floor(Math.random() * max);
+}
+
+function createBingoSheet() {
+	var sheetArray = [];
+	var currentNum = -1;
+	
+	var useSheetSize = Math.pow(sheetSize, 2);
+	
+	for (var i = 0; i < useSheetSize; i++) {
+		
+		if (i == ((useSheetSize - 1) / 2) && freeSpace) {
+			currentNum = 0;
+		} else {
+			currentNum = getRandom(maxBingoInt) + 1;
+			while(sheetArray.length != 0 && sheetArray.indexOf(currentNum) != -1) {
+				currentNum = getRandom(maxBingoInt) + 1;
+			};
+		}
+		
+		sheetArray.push(currentNum);
+	}
+	
+	return sheetArray;
+}
+
+function checkBingo(sheetArray) {
+	var isBingo = false;
+	
+	for (var i = 0; i < sheetSize; i++) {
+		
+		var hit = 0;
+		var offset = i * sheetSize;
+		// Pattern Rows
+		for (var j = 0; j < sheetSize; j++) {
+			if (chosenNumbers.indexOf(sheetArray[offset + j]) !== -1) {
+				hit++;
+			}
+		}
+		
+		if (hit == sheetSize) {
+			isBingo = true;
+			cLog('Hit Rows: ' + i);
+			break;
+		}
+		
+		hit = 0;
+		// Pattern Columns
+		for (var j = 0; j < sheetSize; j++) {
+			if (chosenNumbers.indexOf(sheetArray[i + (j * sheetSize)]) !== -1) {
+				hit++;
+			}
+		}
+		
+		if (hit == sheetSize) {
+			isBingo = true;
+			cLog('Hit Columns: ' + i);
+			break;
+		}
+	}
+	
+	// Pattern Cross 1
+	if (!isBingo) {
+		var cHit = 0;
+		for (var i = 0; i < sheetSize; i++) {
+			if (chosenNumbers.indexOf(sheetArray[i * (sheetSize + 1)]) !== -1) {
+				cHit++;
+			}
+		}
+		
+		if (cHit == sheetSize) {
+			isBingo = true;
+			cLog('Hit Cross1');
+		}
+	}
+	
+	// Pattern Cross 2
+	if (!isBingo) {
+		var cHit = 0;
+		for (var i = 0; i < sheetSize; i++) {
+			if (chosenNumbers.indexOf(sheetArray[(sheetSize - 1) * i]) !== -1) {
+				cHit++;
+			}
+		}
+		
+		if (cHit == sheetSize) {
+			isBingo = true;
+			cLog('Hit Cross1');
+		}
+	}
+	
+	return isBingo;
+}
+
+function performDraw() {
+	var randNum = getRandom(maxBingoInt) + 1;
+	while(chosenNumbers.indexOf(randNum) != -1) {
+		randNum = getRandom(maxBingoInt) + 1;
+	};
+	
+	chosenNumbers.push(randNum);
+	
+	if (chosenNumbers.length >= sheetSize) {
+		
+		var tempIdStore = [];
+		for (var i = 0; i < bingoSheets.length; i++) {
+			var res = checkBingo(bingoSheets[i]);
+			if (res) {
+				tempIdStore.push(i);
+			}
+		}
+		
+		if (tempIdStore.length > 0) {
+			bingoedCount += tempIdStore.length;
+			tempIdStore = tempIdStore.reverse();
+			for (var j = 0; j < tempIdStore.length; j++) {
+				bingoSheets.splice(tempIdStore[j], 1);
+			}
+		}
+		
+	}
+	
+	if (bingoSheets.length > 0 && bingoedCount < maxBingoHit) {
+		performDraw();
+	} else {
+		totalDrawResults.push(chosenNumbers.length - (freeSpace ? 1 : 0));
+		cLog('Completed');
+	}
+}
+
+function start() {
+	for (var i = 0; i < redrawCount; i++) {
+		
+		cLog('Current run: ' + i, true);
+		
+		// Init
+		bingoedCount = 0;
+		bingoSheets = [];
+		chosenNumbers = [];
+		if (freeSpace) {
+			chosenNumbers.push(0);
+		}
+		
+		// Populate Sheets
+		for (var x = 0; x < contestants; x++) {
+			bingoSheets.push(createBingoSheet());
+		}
+		
+		performDraw();
+	}
+	
+	var average = 0;
+	for (var z = 0; z < totalDrawResults.length; z++) {
+		average += totalDrawResults[z];
+	}
+	average /= totalDrawResults.length;
+	
+	cLog('Average draws for ' + maxBingoHit + ' Bingo out of ' + contestants + ' Players: ' + average + ' draws', true);
+}
+
+start();
+
+
+</script>
+<div id="contents">
+</div>
+<!--
+00 01 02 03 04
+05 06 07 08 09
+10 11 12 13 14
+15 16 17 18 19
+20 21 22 23 24
+-->
+</body></html>
